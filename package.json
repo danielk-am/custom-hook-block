@@ -1,0 +1,28 @@
+{
+  "name": "registered-render-blocks",
+  "version": "0.1.0",
+  "description": "Editable WordPress blocks for trusted PHP renderers, with authorized server previews.",
+  "author": "Daniel Kam",
+  "license": "GPL-2.0-or-later",
+  "scripts": {
+    "build": "wp-scripts build",
+    "start": "wp-scripts start",
+    "lint:js": "wp-scripts lint-js src",
+    "lint:css": "wp-scripts lint-style src/**/*.scss",
+    "format": "wp-scripts format src",
+    "plugin-zip": "wp-scripts plugin-zip",
+    "lint:php": "php -l registered-render-blocks.php && php -l includes/registry.php && php -l includes/block.php && php -l tests/run.php"
+  },
+  "devDependencies": {
+    "@wordpress/scripts": "^36.0.0",
+    "@wordpress/block-editor": "^18.0.0",
+    "@wordpress/blocks": "^16.1.0",
+    "@wordpress/components": "^41.0.0",
+    "@wordpress/core-data": "^8.1.0",
+    "@wordpress/data": "^10.56.0",
+    "@wordpress/element": "^8.8.0",
+    "@wordpress/html-entities": "^4.56.0",
+    "@wordpress/i18n": "^6.29.0",
+    "@wordpress/server-side-render": "^6.32.0"
+  }
+}

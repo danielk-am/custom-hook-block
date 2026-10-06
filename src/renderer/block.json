@@ -1,0 +1,33 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "registered-render-blocks/renderer",
+	"version": "0.1.0",
+	"title": "Registered Renderer",
+	"category": "widgets",
+	"icon": "editor-code",
+	"description": "Display a trusted renderer with editable settings and a server preview.",
+	"textdomain": "registered-render-blocks",
+	"attributes": {
+		"renderer": { "type": "string", "default": "notice" },
+		"settings": { "type": "object", "default": {} }
+	},
+	"usesContext": [ "postId", "postType" ],
+	"supports": {
+		"html": false,
+		"anchor": true,
+		"align": [ "wide", "full" ],
+		"color": { "text": true, "background": true, "link": true },
+		"typography": { "fontSize": true, "lineHeight": true },
+		"spacing": { "margin": true, "padding": true, "blockGap": true },
+		"__experimentalBorder": {
+			"color": true,
+			"radius": true,
+			"style": true,
+			"width": true
+		}
+	},
+	"editorScript": "file:./index.js",
+	"editorStyle": "file:./index.css",
+	"style": "file:./style-index.css"
+}

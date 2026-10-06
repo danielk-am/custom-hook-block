@@ -1,0 +1,13 @@
+.wp-block-registered-render-blocks-renderer,
+.wp-block-mytheme-custom-hook-block {
+	box-sizing: border-box;
+	overflow-wrap: anywhere;
+
+	> :first-child {
+		margin-block-start: 0;
+	}
+
+	> :last-child {
+		margin-block-end: 0;
+	}
+}
