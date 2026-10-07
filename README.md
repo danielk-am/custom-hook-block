@@ -25,6 +25,10 @@ The Notice renderer running in WordPress, with editable content and its server p
 
 ![Notice renderer with heading and message settings and live PHP preview](https://raw.githubusercontent.com/danielk-am/registered-render-blocks/main/.wordpress-org/screenshot-1.jpg)
 
+## Code Snippets and Ajax examples
+
+[See the working PHP and Ajax examples](docs/examples/README.md), including source in Code Snippets, block-editor previews and the frontend result.
+
 ## Install
 
 Download the ZIP from [Releases](https://github.com/danielk-am/registered-render-blocks/releases), then use **Plugins → Add Plugin → Upload Plugin** in WordPress. Activate it and insert **Registered Renderer**, choosing **Notice** to start.
