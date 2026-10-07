@@ -4,7 +4,7 @@ Tags: blocks, block editor, dynamic blocks, developers
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.0.0
+Stable tag: 2.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -16,6 +16,7 @@ Custom Hook Block lets developers place PHP output in the block editor. Editors 
 
 Keep an existing add_action callback and explicitly register its display hook with chb_register_hook. For callbacks that return HTML, use chb_register_renderer. The included Notice renderer provides editable heading and message fields.
 
+* Optional Interact mode for developer-enabled editor previews.
 * Typed settings: text, choices, booleans, and numbers.
 * Native block colour, typography, spacing, and border controls.
 * Server previews through WordPress's authenticated block-renderer API.
@@ -59,11 +60,22 @@ No. Site integrations may read those plugins' data, but this plugin has no depen
 = Can I preview a product in a template? =
 Yes. Choose its content type and search for its title under Preview context. You must be allowed to edit that product. The selection is temporary and never changes frontend context.
 
+= Can I use buttons and Ajax inside the editor? =
+Yes, for renderers whose developer enables interactive previews and supplies an editor initializer. Select the block and turn on Interact. Escape returns to editing. Existing renderers remain non-interactive until configured. Interaction mode is temporary and is not saved into content.
+
 == Screenshots ==
 
-1. Custom Hook Block 2.0.0 showing a registered PHP action, editable heading and message settings, and the PHP preview after saving and reloading.
+1. A registered PHP action with editable heading and message settings and its PHP preview.
+2. Interact enabled in Custom Hook Block 2.1.0, with an Ajax response inside the editor.
 
 == Changelog ==
+
+= 2.1.0 =
+Released 2026-10-07.
+* Adds opt-in interactive editor previews and a temporary Interact control.
+* Mounts approved editor scripts per preview, with abort signals and cleanup on refresh or removal.
+* Adds an interactive Ajax snippet example and updated listing artwork and screenshots.
+
 
 = 2.0.0 =
 Released 2026-10-07.

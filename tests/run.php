@@ -75,6 +75,18 @@ if ( function_exists( 'chb_register_hook' ) ) {
     $check( 'Registered hook renderer ID invokes same display action', 2 === $hook_calls && false !== strpos( $html, 'fixture-display' ) );
     $html = $render( array( 'hookName' => 'chb_fixture_display', 'settings' => array( 'count' => '3' ) ), array(), 'mytheme/custom-hook-block' );
     $check( 'Invalid typed hook settings never execute action', '' === $html && 2 === $hook_calls );
+    // A disposable UI demo may already register the original default hook.
+    // Isolate this request-local fixture without changing stored site settings.
+    $default_registrations = array();
+    $fixture_registry =& rrb_registry();
+    foreach ( $fixture_registry as $registered_id => $registered_definition ) {
+        if ( in_array( 'my_custom_hook', $registered_definition['legacy_hooks'], true ) ) {
+            $default_registrations[ $registered_id ] = $registered_definition;
+            unset( $fixture_registry[ $registered_id ] );
+        }
+    }
+    $default_hook_snapshot = isset( $GLOBALS['wp_filter']['my_custom_hook'] ) ? clone $GLOBALS['wp_filter']['my_custom_hook'] : null;
+    remove_all_actions( 'my_custom_hook' );
     $default_calls = 0;
     add_action( 'my_custom_hook', static function () use ( &$default_calls ) { ++$default_calls; echo '<p>Original default hook output</p>'; } );
     $check( 'Original default hook explicitly registered', true === chb_register_hook( 'my_custom_hook', array( 'title' => 'Original default' ) ) );
@@ -157,6 +169,12 @@ try {
 	wp_delete_user( $admin );
 	wp_set_current_user( $old_user );
 	$GLOBALS['post'] = $old_post;
+}
+if ( isset( $default_hook_snapshot ) ) { $GLOBALS['wp_filter']['my_custom_hook'] = $default_hook_snapshot; } else { remove_all_actions( 'my_custom_hook' ); }
+if ( ! empty( $default_registrations ) ) {
+    $fixture_registry =& rrb_registry();
+    unset( $fixture_registry[ 'hook-' . md5( 'my_custom_hook' ) ] );
+    foreach ( $default_registrations as $registered_id => $registered_definition ) { $fixture_registry[ $registered_id ] = $registered_definition; }
 }
 $failed = count( array_filter( $results, static function ( $row ) { return ! $row['pass']; } ) );
 echo wp_json_encode( array( 'passed' => count( $results ) - $failed, 'failed' => $failed, 'results' => $results ), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES ) . "\n";

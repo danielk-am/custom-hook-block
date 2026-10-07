@@ -9,3 +9,7 @@ Use a disposable WordPress site with Code Snippets and this plugin active. Never
 5. Open the saved page and click Refresh server time. Confirm the timestamp changes and success message appears. Capture docs/examples/hook-ajax-result.jpg.
 
 The 2.0.0 captures were made with Codex computer-use screenshots on WordPress7.1.2/PHP8.4, Code SnippetsPro3.10.2, on 7October2026. The Pro-specific JavaScript loader was not used. The editor's thin selection outline is WordPress UI; neither block has an imposed background or padding.
+
+## Interactive preview capture (2.1.0)
+
+Use the updated ajax-clock.php snippet with its editor handle and interactive opt-in. Open page41's editor, select the clock, turn on Interact, click Refresh server time, and confirm a changed timestamp and success message. Change its Heading, wait for PHP output, click again to confirm reinitialization, then save. Capture .wordpress-org/screenshot-2.jpg and docs/examples/interactive-editor.jpg. Escape must return to editing. Reload must reset Interact to off; saved block attributes must not contain interaction state.

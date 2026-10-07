@@ -1,20 +1,30 @@
-import { InspectorControls, useBlockProps } from '@wordpress/block-editor';
 import {
+	BlockControls,
+	InspectorControls,
+	useBlockProps,
+} from '@wordpress/block-editor';
+import {
+	Button,
 	ComboboxControl,
-	Disabled,
 	Notice,
 	PanelBody,
 	SelectControl,
 	TextControl,
 	TextareaControl,
 	ToggleControl,
+	ToolbarButton,
+	ToolbarGroup,
 } from '@wordpress/components';
 import { useSelect } from '@wordpress/data';
-import { useEffect, useState } from '@wordpress/element';
+import { useEffect, useRef, useState } from '@wordpress/element';
 import { store as coreDataStore } from '@wordpress/core-data';
 import { decodeEntities } from '@wordpress/html-entities';
 import { __ } from '@wordpress/i18n';
-import ServerSideRender from '@wordpress/server-side-render';
+import Preview from './preview';
+import {
+	getPreviewInitializer,
+	subscribePreviewRegistry,
+} from './preview-registry';
 import './editor.scss';
 
 export default function Edit( { attributes, setAttributes, context, name } ) {
@@ -31,6 +41,16 @@ export default function Edit( { attributes, setAttributes, context, name } ) {
 		( select ) => select( 'core/editor' )?.getCurrentPostId?.(),
 		[]
 	);
+	const [ interact, setInteract ] = useState( false );
+	const [ , setRegistryRevision ] = useState( 0 );
+	useEffect(
+		() =>
+			subscribePreviewRegistry( () =>
+				setRegistryRevision( ( value ) => value + 1 )
+			),
+		[]
+	);
+	const initializer = getPreviewInitializer( chosen?.id );
 	const [ previewPost, setPreviewPost ] = useState( '' );
 	const [ previewType, setPreviewType ] = useState( 'post' );
 	const [ previewSearch, setPreviewSearch ] = useState( '' );
@@ -83,8 +103,23 @@ export default function Edit( { attributes, setAttributes, context, name } ) {
 	if ( previewPost ) {
 		postId = Number( previewPost );
 	}
-	const blockProps = useBlockProps( { className: 'rrb-editor' } );
+	const blockRoot = useRef();
+	const blockProps = useBlockProps( {
+		className: 'rrb-editor',
+		ref: blockRoot,
+	} );
 	const settings = attributes.settings || {};
+	const resolvedSettings = Object.fromEntries(
+		Object.entries( chosen?.settings || {} ).map( ( [ key, schema ] ) => [
+			key,
+			settings[ key ] ?? schema.default,
+		] )
+	);
+	useEffect( () => setInteract( false ), [ chosen?.id, postId ] );
+	const exitInteraction = () => {
+		setInteract( false );
+		blockRoot.current?.focus();
+	};
 	const update = ( key, value ) =>
 		setAttributes( { settings: { ...settings, [ key ]: value } } );
 	const previewAttributes = { ...attributes };
@@ -94,6 +129,19 @@ export default function Edit( { attributes, setAttributes, context, name } ) {
 	}
 	return (
 		<>
+			{ chosen?.interactive && (
+				<BlockControls>
+					<ToolbarGroup>
+						<ToolbarButton
+							isPressed={ interact }
+							disabled={ ! initializer }
+							onClick={ () => setInteract( ! interact ) }
+						>
+							{ __( 'Interact', 'custom-hook-block' ) }
+						</ToolbarButton>
+					</ToolbarGroup>
+				</BlockControls>
+			) }
 			<InspectorControls>
 				<PanelBody
 					title={ __( 'Hook or renderer', 'custom-hook-block' ) }
@@ -126,6 +174,25 @@ export default function Edit( { attributes, setAttributes, context, name } ) {
 						}
 					/>
 					{ chosen?.description && <p>{ chosen.description }</p> }
+					{ interact && (
+						<>
+							<p>
+								{ __(
+									'Interact mode is on. Press Escape or return to editing to change the block.',
+									'custom-hook-block'
+								) }
+							</p>
+							<Button
+								variant="secondary"
+								onClick={ exitInteraction }
+							>
+								{ __(
+									'Return to editing',
+									'custom-hook-block'
+								) }
+							</Button>
+						</>
+					) }
 					{ ! chosen && legacy && attributes.hookName && (
 						<Notice status="warning" isDismissible={ false }>
 							{ __(
@@ -271,19 +338,34 @@ export default function Edit( { attributes, setAttributes, context, name } ) {
 								) }
 							</Notice>
 						) }
-						<Disabled>
-							<ServerSideRender
-								block={
-									legacy
-										? 'mytheme/custom-hook-block'
-										: 'registered-render-blocks/renderer'
-								}
-								attributes={ previewAttributes }
-								urlQueryArgs={ { post_id: postId } }
-								httpMethod="POST"
-								skipBlockSupportAttributes
-							/>
-						</Disabled>
+						{ chosen.interactive && ! initializer && (
+							<Notice status="info" isDismissible={ false }>
+								{ __(
+									'Interactive preview is unavailable: its editor initializer has not loaded.',
+									'custom-hook-block'
+								) }
+							</Notice>
+						) }
+						<Preview
+							key={ JSON.stringify( [
+								previewAttributes,
+								postId,
+								interact,
+							] ) }
+							block={
+								legacy
+									? 'mytheme/custom-hook-block'
+									: 'registered-render-blocks/renderer'
+							}
+							attributes={ previewAttributes }
+							postId={ postId }
+							settings={ resolvedSettings }
+							initializer={
+								chosen.interactive ? initializer : undefined
+							}
+							interact={ interact && chosen.interactive }
+							onExit={ exitInteraction }
+						/>
 					</>
 				) }
 			</div>

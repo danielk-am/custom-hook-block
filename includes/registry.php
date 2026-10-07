@@ -26,6 +26,9 @@ function rrb_register_renderer( $id, $args ) {
 	if ( ! is_array( $args ) || empty( $args['title'] ) || ! is_string( $args['title'] ) || ! isset( $args['callback'] ) || ! is_callable( $args['callback'] ) ) {
 		return new WP_Error( 'rrb_invalid_renderer', __( 'A renderer needs a title and a callable.', 'custom-hook-block' ) );
 	}
+	if ( array_key_exists( 'interactive', $args ) && ! is_bool( $args['interactive'] ) ) {
+		return new WP_Error( 'rrb_invalid_interactive', __( 'Interactive preview must be a boolean.', 'custom-hook-block' ) );
+	}
 	$schemas = $args['settings'] ?? array();
 	if ( ! is_array( $schemas ) || count( $schemas ) > 40 ) {
 		return new WP_Error( 'rrb_invalid_schema', __( 'Invalid settings schema.', 'custom-hook-block' ) );
@@ -79,6 +82,7 @@ function rrb_register_renderer( $id, $args ) {
 		'title'        => $args['title'],
 		'description'  => is_string( $args['description'] ?? '' ) ? ( $args['description'] ?? '' ) : '',
 		'settings'     => $schemas,
+		'interactive'  => $args['interactive'] ?? false,
 		'callback'     => $args['callback'],
 		'legacy_hooks' => $aliases,
 	) );

@@ -4,6 +4,9 @@ import metadata from './block.json';
 import Edit from './edit';
 import save from './save';
 import './style.scss';
+import { registerPreview } from './preview-registry';
+
+window.chbEditor = Object.freeze( { registerPreview } );
 
 registerBlockType( metadata.name, {
 	edit: Edit,

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Custom Hook Block
  * Description: Display explicitly registered PHP hooks and renderers with native block controls and shared server previews.
- * Version: 2.0.0
+ * Version: 2.1.0
  * Requires at least: 6.9
  * Requires PHP: 7.4
  * Author: Daniel Kam
@@ -15,7 +15,7 @@
  */
 
 defined( 'ABSPATH' ) || exit;
-define( 'CHB_VERSION', '2.0.0' );
+define( 'CHB_VERSION', '2.1.0' );
 
 /** Delay compatibility APIs until every active plugin's main file has loaded. */
 function chb_bootstrap() {

@@ -156,7 +156,7 @@ function rrb_register_blocks() {
 	}
 	$config = array( 'renderers' => array(), 'compat' => $compat_registered );
 	foreach ( rrb_registry() as $id => $renderer ) {
-		$config['renderers'][] = array( 'id' => $id, 'title' => $renderer['title'], 'description' => $renderer['description'], 'settings' => $renderer['settings'], 'legacyHooks' => $renderer['legacy_hooks'] );
+		$config['renderers'][] = array( 'id' => $id, 'title' => $renderer['title'], 'description' => $renderer['description'], 'settings' => $renderer['settings'], 'interactive' => $renderer['interactive'], 'legacyHooks' => $renderer['legacy_hooks'] );
 	}
 	foreach ( $type->editor_script_handles as $handle ) {
 		wp_add_inline_script( $handle, 'window.rrbSettings = ' . wp_json_encode( $config, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT ) . ';', 'before' );
@@ -185,6 +185,11 @@ function rrb_editor_scripts() {
 	foreach ( rrb_registry() as $renderer ) {
 		foreach ( $renderer['editor_script_handles'] as $handle ) {
 			if ( wp_script_is( $handle, 'registered' ) ) {
+				$block_type = WP_Block_Type_Registry::get_instance()->get_registered( 'mytheme/custom-hook-block' );
+				if ( $block_type ) {
+					$scripts = wp_scripts();
+					$scripts->registered[ $handle ]->deps = array_values( array_unique( array_merge( $scripts->registered[ $handle ]->deps, array_diff( $block_type->editor_script_handles, array( $handle ) ) ) ) );
+				}
 				wp_enqueue_script( $handle );
 			}
 		}

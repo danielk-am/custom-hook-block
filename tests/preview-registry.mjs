@@ -1,0 +1,56 @@
+/** Standalone Node checks for the actual dependency-free editor registry module. */
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+const source = new URL('../src/renderer/preview-registry.js', import.meta.url);
+globalThis.window = {};
+const code = await fs.readFile(source, 'utf8');
+const api = await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`);
+let passed = 0;
+const check = (name, fn) => { fn(); passed++; console.log(`PASS ${name}`); };
+check('Trusted registration API exported', () => assert.equal(typeof api.registerPreview, 'function'));
+check('Unknown initializer absent by default', () => assert.equal(api.getPreviewInitializer('fixture/missing'), undefined));
+let notifications = 0;
+const unsubscribe = api.subscribePreviewRegistry(() => notifications++);
+const first = () => () => {};
+const remove = api.registerPreview('fixture/first', first);
+check('Exact renderer retrieves registered initializer', () => assert.equal(api.getPreviewInitializer('fixture/first'), first));
+check('Registration notifies subscribers', () => assert.ok(notifications > 0));
+check('Duplicate registration rejected', () => assert.throws(() => api.registerPreview('fixture/first', () => {})));
+for (const id of ['', '../x', 'X', 'x<script>', 'x y', 'x/'.repeat(60), null, {}]) {
+ check(`Invalid initializer identifier rejected: ${JSON.stringify(id)}`, () => assert.throws(() => api.registerPreview(id, () => {})));
+}
+check('Non-function mount rejected', () => assert.throws(() => api.registerPreview('fixture/bad', '<script>')));
+remove();
+check('Unregister removes initializer', () => assert.equal(api.getPreviewInitializer('fixture/first'), undefined));
+const second = () => {};
+const removeSecond = api.registerPreview('fixture/first', second);
+remove();
+check('Stale unregister cannot remove a replacement', () => assert.equal(api.getPreviewInitializer('fixture/first'), second));
+unsubscribe();
+const before = notifications;
+removeSecond();
+check('Unsubscribed listeners stay detached', () => assert.equal(notifications, before));
+// Exercise the actual lifecycle helper without React or fake implementation code.
+const rootA = { id: 'A', ownerDocument: { defaultView: { AbortController } } };
+const rootB = { id: 'B', ownerDocument: { defaultView: { AbortController } } };
+const mounts = []; let cleanups = 0;
+const initializer = (args) => { mounts.push(args); return () => { assert.equal(args.signal.aborted, true); cleanups++; }; };
+const stopA = api.mountPreview(initializer, {root: rootA, settings: {count: 1}, context: {post_id: 11, preview: true}});
+const stopB = api.mountPreview(initializer, {root: rootB, settings: {count: 2}, context: {post_id: 12, preview: true}});
+check('Each instance receives own root/settings/product context', () => { assert.equal(mounts[0].root, rootA); assert.equal(mounts[1].root, rootB); assert.equal(mounts[0].context.post_id, 11); assert.equal(mounts[1].settings.count, 2); });
+check('Each instance owns a distinct live abort signal', () => { assert.notEqual(mounts[0].signal, mounts[1].signal); assert.equal(mounts[0].signal.aborted, false); });
+stopA();
+check('Unmount aborts before cleanup without affecting another instance', () => { assert.equal(mounts[0].signal.aborted, true); assert.equal(mounts[1].signal.aborted, false); assert.equal(cleanups, 1); });
+stopA();
+check('Cleanup is idempotent', () => assert.equal(cleanups, 1));
+const stopRerender = api.mountPreview(initializer, {root: rootA, settings: {count: 3}, context: {post_id: 13, preview: true}});
+check('Replacement mount gets fresh signal and current settings', () => { assert.equal(mounts[2].settings.count, 3); assert.equal(mounts[2].context.post_id, 13); assert.equal(mounts[2].signal.aborted, false); assert.notEqual(mounts[2].signal, mounts[0].signal); });
+stopRerender(); stopB();
+check('All live instances clean independently', () => assert.equal(cleanups, 3));
+let thrownSignal;
+check('Initializer exception aborts its signal and propagates', () => { assert.throws(() => api.mountPreview(({signal}) => { thrownSignal = signal; throw new Error('fixture failure'); }, {root: rootA, settings: {}, context: {}}), /fixture failure/); assert.equal(thrownSignal.aborted, true); });
+let invalidSignal;
+check('Async cleanup contract rejected and operation aborted', () => { assert.throws(() => api.mountPreview(({signal}) => { invalidSignal = signal; return Promise.resolve(); }, {root: rootA, settings: {}, context: {}}), /cleanup function/); assert.equal(invalidSignal.aborted, true); });
+const noCleanup = api.mountPreview(() => {}, {root: rootA, settings: {}, context: {}});
+check('Initializer without cleanup disposes safely', () => assert.doesNotThrow(noCleanup));
+console.log(JSON.stringify({ passed, failed: 0 }));

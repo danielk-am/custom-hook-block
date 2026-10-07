@@ -1,10 +1,10 @@
 <p align="center"><img src=".wordpress-org/icon-128x128.png" width="64" height="64" alt="Custom Hook Block icon"></p>
 
-![Custom Hook Block: PHP output. Native block controls.](.wordpress-org/banner-1544x500.png)
+![Custom Hook Block: PHP output. Interactive editor previews.](.wordpress-org/banner-1544x500.png)
 
 # Custom Hook Block
 
-Place PHP output in the block editor using an approved WordPress hook or renderer. Editors can change its settings and appearance while developers keep the code in a plugin, theme, or PHP snippet.
+Place PHP output in the block editor using an approved WordPress hook or renderer. Editors can change its settings and appearance, then test supported interactions in the editor. Developers keep the code in a plugin, theme, or PHP snippet.
 
 [Download the installable ZIP](https://github.com/danielk-am/custom-hook-block/releases/latest) · [Report an issue](https://github.com/danielk-am/custom-hook-block/issues)
 
@@ -17,6 +17,7 @@ Place PHP output in the block editor using an approved WordPress hook or rendere
 - Supports native colours, typography, spacing, and borders.
 - Lets you search for a record to preview without saving that preview choice into the page.
 - Loads registered CSS and JavaScript assets for developer integrations.
+- Offers a temporary **Interact** mode for components with an approved editor initializer.
 
 The renderer adds no default background box or padding. Its callback supplies the HTML; the theme and optional block style choices determine its appearance.
 
@@ -24,9 +25,9 @@ PHP code lives in your plugin or theme. Editors change typed settings rather tha
 
 ## Editor screenshot
 
-Custom Hook Block 2.0.0 displaying a registered PHP action, with its heading edited, saved, and reloaded. The banner is an illustration. This is a real editor capture using demonstration content.
+Select the Ajax example, turn on **Interact**, and refresh the server time directly in the editor. This screenshot shows a successful PHP response after changing and saving its heading. The banner above is an illustration; the screenshot is the real WordPress editor.
 
-![Registered PHP action with editable heading and message settings and its PHP preview](.wordpress-org/screenshot-1.jpg)
+![Custom Hook Block with Interact enabled and a successful Ajax response inside the editor](.wordpress-org/screenshot-2.jpg)
 
 ## Code Snippets and Ajax examples
 
@@ -60,6 +61,8 @@ Run the runtime suite on a disposable WordPress site with this plugin active:
 
 ```sh
 studio wp eval-file /absolute/path/to/custom-hook-block/tests/run.php
+studio wp eval-file /absolute/path/to/custom-hook-block/tests/interactive.php
+node tests/preview-registry.mjs
 ```
 
 The suite creates and removes fixture posts and users. It covers hook output, recursion, buffer cleanup, both block identities, malformed settings, HTML escaping, frontend context, and preview permissions. Never run fixture tests on production.
@@ -97,7 +100,7 @@ add_action( 'chb_register_renderers', function () {
 
 Choose **My display hook** in the block sidebar. The callback receives validated settings and the current context. Existing callbacks that accept no arguments can continue to echo their content.
 
-`chb_register_hook($hook_name, $definition)` accepts a required `title`, optional `description`, a `settings` map, and the three asset-handle lists described below. It returns `true` or `WP_Error`. Hook names start with a letter and contain only letters, digits, and underscores, up to 100 characters.
+`chb_register_hook($hook_name, $definition)` accepts a required `title`, optional `description`, a `settings` map, the three asset-handle lists described below, and an optional boolean `interactive` (default `false`). It returns `true` or `WP_Error`. Hook names start with a letter and contain only letters, digits, and underscores, up to 100 characters.
 
 Register each hook once. `callback` and `legacy_hooks` are supplied internally and cannot appear in a hook definition. Only the exact registered action is dispatched. Recursion into the same hook is stopped, and output buffers are cleaned if a callback throws.
 
@@ -164,6 +167,31 @@ Register handles before the corresponding enqueue hook; source URLs and executab
 
 Scope CSS to `.rrb-renderer--my-product-facts` or renderer-owned classes. Core block support styles are applied by the block wrapper in both editor and frontend.
 
+## Interactive editor previews
+
+Select a supported block and turn on **Interact** in its toolbar. Its buttons and controls become usable inside the editor, including Ajax requests. Turn Interact off or press Escape to return to normal block editing. This choice is temporary and is never saved into page content.
+
+Existing renderers stay non-interactive until their developer opts in. This does not automatically make every frontend script work in the editor: its DOM belongs to the editor iframe, and PHP previews are replaced when settings change.
+
+In the PHP registration, set `interactive` to `true` and supply an `editor_script_handles` asset. That trusted editor script registers an initializer:
+
+```js
+window.chbEditor.registerPreview('my/product-facts', ({ root, settings, context, signal }) => {
+    const button = root.querySelector('button');
+    const onClick = () => { /* Update this preview only. */ };
+    button?.addEventListener('click', onClick);
+    return () => button?.removeEventListener('click', onClick);
+});
+```
+
+For a display hook registered with `chb_register_hook`, the initializer ID is `hook-` followed by the PHP `md5($hook_name)`. Pass that value into your editor asset using `wp_json_encode`; keep the existing `add_action` callback. The same opt-in and cleanup rules apply.
+
+`root` is this preview's DOM container. Use `root.ownerDocument` for its document and `root.ownerDocument.defaultView` for browser APIs. `settings` includes declared defaults; `context` contains `post_id` and `preview: true`. Keep listeners and queries within this root so multiple blocks work independently.
+
+The initializer must synchronously return a cleanup function or `undefined`. Its abort signal is cancelled before cleanup when Interact stops, the block unmounts, or settings, context or rendered output change. Pass the signal to requests, or abort your own controllers during cleanup. Check it before applying asynchronous results. The [Ajax clock example](docs/examples/ajax-clock.php) demonstrates this for a PHP snippet.
+
+Editor handles load after the plugin's editor API. Frontend handles remain separate. The plugin does not execute script tags from the PHP preview or copy frontend scripts into the editor. This lifecycle is for trusted display components; it does not authorize an endpoint to change data. Integrations must enforce endpoint permissions and CSRF protection where needed.
+
 ## Preview security
 
 The plugin uses the built-in `/wp/v2/block-renderer/mytheme/custom-hook-block` route (and the Registered Render Blocks compatibility route), authenticated by WordPress. Core validates registered block attributes.
@@ -194,13 +222,13 @@ A renderer may still map old hook names through `legacy_hooks`. A valid saved re
 
 ## Version status and validation
 
-Version 2.0.0 combines the original Custom Hook Block with Registered Render Blocks. It has not been submitted to or approved by WordPress.org.
+Version 2.1.0 adds interactive editor previews to the combined Custom Hook Block plugin. It has not been submitted to or approved by WordPress.org.
 
-The merged build passed 68 runtime checks and 10 site-adapter integration checks on WordPress 7.1.2 and PHP 8.4. Both coactivation load orders passed.
+The 2.1.0 build passed 109 PHP runtime and integration checks (68 existing, 31 interactive-preview, 10 site-adapter) and 26 JavaScript registration/lifecycle checks on WordPress 7.1.2 and PHP 8.4.
 
 Build, JavaScript/CSS lint, and PHP syntax checks passed. The declared minimum WordPress and PHP versions have not been tested separately.
 
-Plugin Check 2.1.0 passed on the extracted 2.0.0 ZIP fileset with no findings. Its 29 static checks ran; five runtime asset checks were unavailable in Studio. Direct browser checks confirmed hook rendering, saved editor settings, transparent wrappers without padding, and the example Ajax interaction. The current hook screenshot was captured from 2.0.0 after editing, saving, and reloading its heading.
+Plugin Check 2.1.0 passed on the extracted 2.1.0 ZIP fileset with no findings. Its 29 static checks ran; five runtime asset checks were unavailable in Studio. Direct browser checks confirmed hook rendering, saved editor settings, transparent wrappers without padding, and the example Ajax interaction. The interactive screenshot shows a real post-editor Ajax response after a settings refresh. Two concurrent instances and Escape were also checked. A separate Site Editor interaction check could not run because the browser security check was unavailable; minimum-version and Site Editor-specific verification remain open.
 
 ## Artwork and licence
 

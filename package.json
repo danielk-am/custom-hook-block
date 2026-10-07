@@ -1,6 +1,6 @@
 {
   "name": "custom-hook-block",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Editable WordPress blocks for explicitly registered PHP display hooks and renderers.",
   "author": "Daniel Kam",
   "license": "GPL-2.0-or-later",
