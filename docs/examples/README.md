@@ -1,12 +1,37 @@
-# Code Snippets → PHP renderer → interactive frontend
+# PHP hooks, renderers, and Ajax examples
 
-These are working examples captured on 7 October 2026 with Registered Render Blocks 0.1.0, Code Snippets Pro 3.10.2, WordPress 7.1.2 and PHP 8.4 in a disposable local test site. They use synthetic content, not customer or catalogue data. Code Snippets itself is not included in this repository.
+Use these optional PHP snippets to add approved output to **Custom Hook Block 2.0.0**. They use demonstration content and add no background box or padding. Code Snippets is optional and is not bundled.
 
-## 1. PHP snippet with editable block settings
+The PHP renderer and Ajax images in sections 2 and 3 are historical captures from Registered Render Blocks 0.1.0 on WordPress 7.1.2 and PHP 8.4, using Code Snippets Pro 3.10.2. Their block labels and API names predate the updated source examples. The current hook screenshots are labelled separately.
 
-Create a **PHP** snippet in Code Snippets, copy [php-card.php](php-card.php) without its opening `<?php`, select **Run everywhere**, and activate it. Registered Render Blocks must be active. Running everywhere allows registration on the frontend and editor preview requests.
+## 1. A WordPress action that echoes content
 
-Insert **Registered Renderer** and choose **PHP greeting from Code Snippets**. The snippet registers `examples/php-card` on `rrb_register_renderers`; its callback returns escaped HTML. The heading and message become settings in the block sidebar. The examples use the snippet output with the theme’s normal styles: no background box or padding is added. Native block Styles controls remain optional. The thin editor selection outline is WordPress UI, not frontend markup.
+1. Create a PHP snippet from [echo-hook.php](echo-hook.php), omitting the opening `<?php` in Code Snippets.
+2. Select **Run everywhere** and activate it with Custom Hook Block active.
+3. Insert **Custom Hook Block** and choose **Greeting from a registered hook**.
+4. Edit **Heading** and **Message** in the block sidebar.
+
+![PHP snippet registering my_custom_hook with chb_register_hook](echo-hook-source.jpg)
+
+![Custom Hook Block 2.0.0 with a registered PHP action and its edited heading after save and reload](echo-hook-editor.jpg)
+
+This current capture shows the registered hook in 2.0.0. The heading was edited, saved, and reloaded.
+
+![Custom Hook Block 2.0.0 frontend showing the registered hook and Ajax example](hook-ajax-result.jpg)
+
+The frontend capture shows the action output alongside the Ajax demo. A real button click changed the clock from `02:39:50 UTC` to `02:39:55 UTC` and showed the success status. Both block wrappers had transparent backgrounds and `0px` padding.
+
+The example keeps `add_action('my_custom_hook', ...)` and explicitly approves that action through `chb_register_hook`. Its callback echoes escaped HTML. The block captures the output for the editor and frontend.
+
+Old Custom Hook Block 1.0 content without a saved hook name used `my_custom_hook`. This example demonstrates its explicit registration. Only use it on a test site unless you have reviewed every callback already attached to that action.
+
+## 2. A PHP callback that returns content
+
+1. Create a PHP snippet from [php-card.php](php-card.php), omitting the opening `<?php` in Code Snippets.
+2. Select **Run everywhere** and activate it with Custom Hook Block active.
+3. Insert **Custom Hook Block** and choose **PHP greeting from Code Snippets**.
+
+Running everywhere allows registration on the frontend and editor preview requests. The snippet registers `examples/php-card` on `chb_register_renderers`; its callback returns escaped HTML. The heading and message become settings in the block sidebar. The examples use the snippet output with the theme’s normal styles: no background box or padding is added. Native block Styles controls remain optional. The thin editor selection outline is WordPress UI, not frontend markup.
 
 ![Active PHP registration snippet in Code Snippets](php-snippet-source.jpg)
 
@@ -14,9 +39,11 @@ Insert **Registered Renderer** and choose **PHP greeting from Code Snippets**. T
 
 This uses the new renderer registration hook. It does not execute arbitrary hook names entered by editors.
 
-## 2. JavaScript and Ajax, managed by a PHP snippet
+## 3. JavaScript and Ajax, managed by a PHP snippet
 
-Create another **PHP** snippet from [ajax-clock.php](ajax-clock.php), omit the opening `<?php`, choose **Run everywhere**, and activate it. Insert **Registered Renderer** and choose **Ajax server clock from Code Snippets**.
+1. Create a PHP snippet from [ajax-clock.php](ajax-clock.php), omitting the opening `<?php` in Code Snippets.
+2. Select **Run everywhere** and activate it.
+3. Insert **Custom Hook Block** and choose **Ajax server clock from Code Snippets**.
 
 This single snippet registers:
 
@@ -44,15 +71,19 @@ The screenshots and tests above demonstrate **PHP-managed JavaScript through Cod
 
 Source inspection of Code Snippets Pro 3.10.2 shows a native frontend-footer JavaScript snippet path, subject to its licensing and location/condition settings. With that feature enabled, the JavaScript can live separately while PHP keeps the renderer and endpoint. Remove the PHP script registration, inline JavaScript and `view_script_handles` entry before activating that separate copy. Account for its loading conditions; a component selector prevents activity on pages without the block, but does not itself prevent a global script download. This separate-loader arrangement has not been run in this disposable site's unlicensed copy, and no licence check was bypassed.
 
-## Verification and scope
+## Historical verification and scope
+
+These observations apply to the earlier 0.1.0 screenshots, before the source examples switched to the canonical `chb_` APIs:
 
 - Both PHP snippets saved active through Code Snippets' own API, with no reported code error.
 - Both renderers appeared in the block editor and produced their PHP previews.
 - Real frontend click changed the server time from `02:11:41 UTC` to `02:11:50 UTC`; the status confirmed the Ajax result without a page reload.
-- Anonymous Ajax GET returned HTTP200 and only the public timestamp. POST returned HTTP405.
+- Anonymous Ajax GET returned HTTP 200 and only the public timestamp. POST returned HTTP 405.
 - A page without this block did not load the example JavaScript asset.
 - Independent source review passed: contextual escaping, read-only endpoint, scoped DOM updates, text-only insertion, duplicate-click protection and timeout/error recovery.
 
 This clock intentionally uses no nonce because it provides public read-only data and performs no mutation. Do not copy that assumption into account data, product management or transactional endpoints: add the appropriate authentication, object/capability checks and CSRF protection. A nonce alone is not authorization.
 
 These examples are opt-in documentation and excluded from the installable plugin ZIP. The plugin does not activate snippets or create endpoints by itself.
+
+The old `rrb_register_renderer` function and `rrb_register_renderers` action still work in 2.0.0. Register each integration on one action only. Deactivate the separate Registered Render Blocks plugin before testing these canonical `chb_` examples.

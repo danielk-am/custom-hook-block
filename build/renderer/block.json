@@ -1,21 +1,25 @@
 {
   "$schema": "https://schemas.wp.org/trunk/block.json",
   "apiVersion": 3,
-  "name": "registered-render-blocks/renderer",
-  "version": "0.1.0",
-  "title": "Registered Renderer",
+  "name": "mytheme/custom-hook-block",
+  "version": "2.0.0",
+  "title": "Custom Hook Block",
   "category": "widgets",
   "icon": "editor-code",
-  "description": "Display a trusted renderer with editable settings and a server preview.",
-  "textdomain": "registered-render-blocks",
+  "description": "Display an approved PHP hook or renderer with editable settings and a server preview.",
+  "textdomain": "custom-hook-block",
   "attributes": {
     "renderer": {
       "type": "string",
-      "default": "notice"
+      "default": ""
     },
     "settings": {
       "type": "object",
       "default": {}
+    },
+    "hookName": {
+      "type": "string",
+      "default": "my_custom_hook"
     }
   },
   "usesContext": [

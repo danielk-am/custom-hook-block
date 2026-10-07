@@ -1,7 +1,7 @@
 {
-  "name": "registered-render-blocks",
-  "version": "0.1.0",
-  "description": "Editable WordPress blocks for trusted PHP renderers, with authorized server previews.",
+  "name": "custom-hook-block",
+  "version": "2.0.0",
+  "description": "Editable WordPress blocks for explicitly registered PHP display hooks and renderers.",
   "author": "Daniel Kam",
   "license": "GPL-2.0-or-later",
   "scripts": {
@@ -11,7 +11,7 @@
     "lint:css": "wp-scripts lint-style src/**/*.scss",
     "format": "wp-scripts format src",
     "plugin-zip": "wp-scripts plugin-zip",
-    "lint:php": "php -l registered-render-blocks.php && php -l includes/registry.php && php -l includes/block.php && php -l tests/run.php"
+    "lint:php": "php -l custom-hook-block.php && php -l includes/registry.php && php -l includes/block.php && php -l tests/run.php"
   },
   "devDependencies": {
     "@wordpress/scripts": "^36.0.0",

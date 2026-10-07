@@ -23,6 +23,7 @@ export default function Edit( { attributes, setAttributes, context, name } ) {
 	const chosen =
 		renderers.find( ( item ) => item.id === attributes.renderer ) ||
 		( legacy &&
+			! attributes.renderer &&
 			renderers.find( ( item ) =>
 				item.legacyHooks.includes( attributes.hookName )
 			) );
@@ -73,7 +74,7 @@ export default function Edit( { attributes, setAttributes, context, name } ) {
 		label: decodeEntities(
 			post.title?.rendered ||
 				post.title?.raw ||
-				__( 'Untitled', 'registered-render-blocks' )
+				__( 'Untitled', 'custom-hook-block' )
 		),
 	} ) );
 	const contextualId = Number( context?.postId || currentPostId );
@@ -95,19 +96,19 @@ export default function Edit( { attributes, setAttributes, context, name } ) {
 		<>
 			<InspectorControls>
 				<PanelBody
-					title={ __( 'Renderer', 'registered-render-blocks' ) }
+					title={ __( 'Hook or renderer', 'custom-hook-block' ) }
 				>
 					<SelectControl
 						label={ __(
-							'Registered renderer',
-							'registered-render-blocks'
+							'Approved hook or renderer',
+							'custom-hook-block'
 						) }
 						value={ chosen?.id || '' }
 						options={ [
 							{
 								label: __(
-									'Choose a renderer',
-									'registered-render-blocks'
+									'Choose a hook or renderer',
+									'custom-hook-block'
 								),
 								value: '',
 							},
@@ -117,10 +118,27 @@ export default function Edit( { attributes, setAttributes, context, name } ) {
 							} ) ),
 						] }
 						onChange={ ( renderer ) =>
-							setAttributes( { renderer, settings: {} } )
+							setAttributes( {
+								renderer,
+								hookName: '',
+								settings: {},
+							} )
 						}
 					/>
 					{ chosen?.description && <p>{ chosen.description }</p> }
+					{ ! chosen && legacy && attributes.hookName && (
+						<Notice status="warning" isDismissible={ false }>
+							{ __(
+								'This saved hook is not registered:',
+								'custom-hook-block'
+							) }{ ' ' }
+							<code>{ attributes.hookName }</code>.{ ' ' }
+							{ __(
+								'A developer must register it before it can run.',
+								'custom-hook-block'
+							) }
+						</Notice>
+					) }
 					{ Object.entries( chosen?.settings || {} ).map(
 						( [ key, schema ] ) => {
 							const value = settings[ key ] ?? schema.default;
@@ -206,17 +224,11 @@ export default function Edit( { attributes, setAttributes, context, name } ) {
 					) }
 				</PanelBody>
 				<PanelBody
-					title={ __(
-						'Preview context',
-						'registered-render-blocks'
-					) }
+					title={ __( 'Preview context', 'custom-hook-block' ) }
 					initialOpen={ false }
 				>
 					<SelectControl
-						label={ __(
-							'Content type',
-							'registered-render-blocks'
-						) }
+						label={ __( 'Content type', 'custom-hook-block' ) }
 						value={ previewType }
 						options={ previewTypes.map( ( type ) => ( {
 							label: type.name,
@@ -229,17 +241,14 @@ export default function Edit( { attributes, setAttributes, context, name } ) {
 						} }
 					/>
 					<ComboboxControl
-						label={ __(
-							'Preview content',
-							'registered-render-blocks'
-						) }
+						label={ __( 'Preview content', 'custom-hook-block' ) }
 						value={ previewPost || null }
 						options={ previewOptions }
 						onFilterValueChange={ setPreviewSearch }
 						onChange={ ( value ) => setPreviewPost( value || '' ) }
 						help={ __(
 							'Search by title. Only content you can edit may be previewed. This choice is temporary and never changes the live page.',
-							'registered-render-blocks'
+							'custom-hook-block'
 						) }
 					/>
 				</PanelBody>
@@ -248,8 +257,8 @@ export default function Edit( { attributes, setAttributes, context, name } ) {
 				{ ! chosen ? (
 					<Notice status="info" isDismissible={ false }>
 						{ __(
-							'Choose a registered renderer. Unregistered legacy hooks are not executed.',
-							'registered-render-blocks'
+							'Choose an approved hook or renderer. Unregistered hooks are not executed.',
+							'custom-hook-block'
 						) }
 					</Notice>
 				) : (
@@ -258,7 +267,7 @@ export default function Edit( { attributes, setAttributes, context, name } ) {
 							<Notice status="info" isDismissible={ false }>
 								{ __(
 									'Sample preview: no post is selected. Choose a preview post for content that depends on a record.',
-									'registered-render-blocks'
+									'custom-hook-block'
 								) }
 							</Notice>
 						) }

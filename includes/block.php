@@ -1,5 +1,5 @@
 <?php
-/** Block registration, rendering and authorized core REST previews. @package Registered_Render_Blocks */
+/** Block registration, rendering and authorized core REST previews. @package Custom_Hook_Block */
 defined( 'ABSPATH' ) || exit;
 
 /** Preview state belongs only to an authorized core block-renderer request. */
@@ -19,7 +19,7 @@ function rrb_preview_permissions( $response, $handler, $request ) {
 	}
 	$post_id = absint( $request->get_param( 'post_id' ) );
 	if ( ! is_user_logged_in() || ( $post_id && ( ! get_post( $post_id ) || ! current_user_can( 'edit_post', $post_id ) ) ) || ( ! $post_id && ! current_user_can( 'edit_theme_options' ) ) ) {
-		return new WP_Error( 'rrb_preview_forbidden', __( 'You cannot preview this content.', 'registered-render-blocks' ), array( 'status' => rest_authorization_required_code() ) );
+		return new WP_Error( 'rrb_preview_forbidden', __( 'You cannot preview this content.', 'custom-hook-block' ), array( 'status' => rest_authorization_required_code() ) );
 	}
 	$state =& rrb_preview_state();
 	$state = array( 'request' => $request, 'post_id' => $post_id );
@@ -41,12 +41,14 @@ add_filter( 'rest_request_after_callbacks', 'rrb_end_preview', 10, 3 );
 function rrb_resolve_renderer( $attributes, $legacy = false ) {
 	$registry = rrb_registry();
 	$id = $attributes['renderer'] ?? '';
-	if ( is_string( $id ) && isset( $registry[ $id ] ) ) {
-		return $id;
+	if ( is_string( $id ) && '' !== $id ) {
+		return isset( $registry[ $id ] ) ? $id : '';
 	}
-	if ( $legacy && isset( $attributes['hookName'] ) && is_string( $attributes['hookName'] ) ) {
+	// Version 1.0 used my_custom_hook when hookName was omitted.
+	$hook_name = $attributes['hookName'] ?? 'my_custom_hook';
+	if ( $legacy && is_string( $hook_name ) && '' !== $hook_name ) {
 		foreach ( $registry as $registered_id => $renderer ) {
-			if ( in_array( $attributes['hookName'], $renderer['legacy_hooks'], true ) ) {
+			if ( in_array( $hook_name, $renderer['legacy_hooks'], true ) ) {
 				return $registered_id;
 			}
 		}
@@ -61,7 +63,7 @@ function rrb_render_block( $attributes, $content, $block ) {
 	$legacy = 'mytheme/custom-hook-block' === $block->name;
 	$id = rrb_resolve_renderer( $attributes, $legacy );
 	if ( '' === $id ) {
-		return $preview ? '<p class="rrb-editor-message">' . esc_html__( 'Choose a registered renderer. Unregistered hooks are not executed.', 'registered-render-blocks' ) . '</p>' : '';
+		return $preview ? '<p class="rrb-editor-message">' . esc_html__( 'Choose a registered renderer. Unregistered hooks are not executed.', 'custom-hook-block' ) . '</p>' : '';
 	}
 	$registry = rrb_registry();
 	$renderer = $registry[ $id ];
@@ -87,10 +89,10 @@ function rrb_render_block( $attributes, $content, $block ) {
 	try {
 		$output = call_user_func( $renderer['callback'], $settings, array( 'post_id' => $post_id, 'preview' => $preview ) );
 	} catch ( Throwable $error ) {
-		return $preview ? '<p class="rrb-editor-message">' . esc_html__( 'The renderer could not produce a preview.', 'registered-render-blocks' ) . '</p>' : '';
+		return $preview ? '<p class="rrb-editor-message">' . esc_html__( 'The renderer could not produce a preview.', 'custom-hook-block' ) . '</p>' : '';
 	}
 	if ( ! is_string( $output ) || '' === trim( $output ) ) {
-		return $preview ? '<p class="rrb-editor-message">' . esc_html__( 'This renderer has no content for the selected post.', 'registered-render-blocks' ) . '</p>' : '';
+		return $preview ? '<p class="rrb-editor-message">' . esc_html__( 'This renderer has no content for the selected post.', 'custom-hook-block' ) . '</p>' : '';
 	}
 	foreach ( $renderer['style_handles'] as $handle ) {
 		if ( wp_style_is( $handle, 'registered' ) ) {
@@ -116,16 +118,17 @@ function rrb_render_block( $attributes, $content, $block ) {
 /** Register bundled renderer and invite site/plugin integrations. */
 function rrb_boot_renderers() {
 	rrb_register_renderer( 'notice', array(
-		'title'       => __( 'Notice', 'registered-render-blocks' ),
-		'description' => __( 'A heading and message rendered by PHP.', 'registered-render-blocks' ),
+		'title'       => __( 'Notice', 'custom-hook-block' ),
+		'description' => __( 'A heading and message rendered by PHP.', 'custom-hook-block' ),
 		'settings'    => array(
-			'heading' => array( 'type' => 'string', 'title' => __( 'Heading', 'registered-render-blocks' ), 'default' => __( 'A useful notice', 'registered-render-blocks' ), 'maxLength' => 160 ),
-			'message' => array( 'type' => 'string', 'title' => __( 'Message', 'registered-render-blocks' ), 'default' => __( 'Write a message in the block settings.', 'registered-render-blocks' ), 'maxLength' => 2000 ),
+			'heading' => array( 'type' => 'string', 'title' => __( 'Heading', 'custom-hook-block' ), 'default' => __( 'A useful notice', 'custom-hook-block' ), 'maxLength' => 160 ),
+			'message' => array( 'type' => 'string', 'title' => __( 'Message', 'custom-hook-block' ), 'default' => __( 'Write a message in the block settings.', 'custom-hook-block' ), 'maxLength' => 2000 ),
 		),
 		'callback'    => static function ( $settings ) {
 			return '<h3>' . esc_html( $settings['heading'] ) . '</h3><p>' . esc_html( $settings['message'] ) . '</p>';
 		},
 	) );
+	do_action( 'chb_register_renderers' );
 	do_action( 'rrb_register_renderers' );
 }
 add_action( 'init', 'rrb_boot_renderers', 9 );
@@ -137,12 +140,12 @@ function rrb_register_blocks() {
 		return;
 	}
 	$type = register_block_type_from_metadata( $metadata, array( 'render_callback' => 'rrb_render_block' ) );
-	$legacy_registered = false;
-	if ( ! WP_Block_Type_Registry::get_instance()->is_registered( 'mytheme/custom-hook-block' ) ) {
-		$legacy_registered = (bool) register_block_type( 'mytheme/custom-hook-block', array(
+	$compat_registered = false;
+	if ( ! WP_Block_Type_Registry::get_instance()->is_registered( 'registered-render-blocks/renderer' ) ) {
+		$compat_registered = (bool) register_block_type( 'registered-render-blocks/renderer', array(
 			'api_version' => 3,
-			'title' => __( 'Legacy registered renderer', 'registered-render-blocks' ),
-			'attributes' => array_merge( $type->attributes, array( 'renderer' => array( 'type' => 'string', 'default' => '' ), 'hookName' => array( 'type' => 'string', 'default' => '' ) ) ),
+			'title' => __( 'Registered Renderer (compatible)', 'custom-hook-block' ),
+			'attributes' => array_merge( $type->attributes, array( 'renderer' => array( 'type' => 'string', 'default' => 'notice' ), 'hookName' => array( 'type' => 'string', 'default' => '' ) ) ),
 			'uses_context' => array( 'postId', 'postType' ),
 			'supports' => array_merge( $type->supports, array( 'inserter' => false ) ),
 			'editor_script_handles' => $type->editor_script_handles,
@@ -151,13 +154,13 @@ function rrb_register_blocks() {
 			'render_callback' => 'rrb_render_block',
 		) );
 	}
-	$config = array( 'renderers' => array(), 'legacy' => $legacy_registered );
+	$config = array( 'renderers' => array(), 'compat' => $compat_registered );
 	foreach ( rrb_registry() as $id => $renderer ) {
 		$config['renderers'][] = array( 'id' => $id, 'title' => $renderer['title'], 'description' => $renderer['description'], 'settings' => $renderer['settings'], 'legacyHooks' => $renderer['legacy_hooks'] );
 	}
 	foreach ( $type->editor_script_handles as $handle ) {
 		wp_add_inline_script( $handle, 'window.rrbSettings = ' . wp_json_encode( $config, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT ) . ';', 'before' );
-		wp_set_script_translations( $handle, 'registered-render-blocks', dirname( __DIR__ ) . '/languages' );
+		wp_set_script_translations( $handle, 'custom-hook-block', dirname( __DIR__ ) . '/languages' );
 	}
 }
 add_action( 'init', 'rrb_register_blocks', 20 );

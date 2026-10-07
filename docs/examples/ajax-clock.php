@@ -13,7 +13,7 @@ $rrb_clock_response = static function () {
 add_action( 'wp_ajax_rrb_example_clock', $rrb_clock_response );
 add_action( 'wp_ajax_nopriv_rrb_example_clock', $rrb_clock_response );
 
-add_action( 'rrb_register_renderers', function () {
+add_action( 'chb_register_renderers', function () {
     wp_register_script( 'rrb-example-clock', false, array(), '1.0.0', true );
     wp_add_inline_script( 'rrb-example-clock', <<<'RRB_JS'
 /* Trusted frontend asset registered by the PHP snippet. No editor interaction. */
@@ -49,7 +49,7 @@ add_action( 'rrb_register_renderers', function () {
 })();
 RRB_JS
     );
-    rrb_register_renderer( 'examples/ajax-clock', array(
+    chb_register_renderer( 'examples/ajax-clock', array(
         'title' => 'Ajax server clock from Code Snippets',
         'description' => 'PHP renders the card; JavaScript refreshes the server time on the frontend.',
         'settings' => array(

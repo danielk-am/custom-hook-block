@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
-slug=registered-render-blocks
+slug=custom-hook-block
 version="$(sed -n 's/^[[:space:]]*\* Version:[[:space:]]*//p' "$root/$slug.php" | head -n 1)"
 test -n "$version"
 stage="$(mktemp -d)"
