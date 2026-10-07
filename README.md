@@ -17,6 +17,8 @@ Turn trusted PHP output into editable WordPress blocks. Choose a renderer, adjus
 - Lets you search for a record to preview without saving that preview choice into the page.
 - Loads registered CSS and JavaScript assets for developer integrations.
 
+The renderer adds no default background box or padding. Its callback supplies the HTML; the theme and optional block style choices determine its appearance.
+
 PHP code lives in your plugin or theme. Editors change typed settings rather than executable source. ACF and WooCommerce are optional integrations.
 
 ## Editor screenshot

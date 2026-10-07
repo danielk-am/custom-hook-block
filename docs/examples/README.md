@@ -6,7 +6,7 @@ These are working examples captured on 7 October 2026 with Registered Render Blo
 
 Create a **PHP** snippet in Code Snippets, copy [php-card.php](php-card.php) without its opening `<?php`, select **Run everywhere**, and activate it. Registered Render Blocks must be active. Running everywhere allows registration on the frontend and editor preview requests.
 
-Insert **Registered Renderer** and choose **PHP greeting from Code Snippets**. The snippet registers `examples/php-card` on `rrb_register_renderers`; its callback returns escaped HTML. The heading and message become settings in the block sidebar. Native block Styles controls provide the colors and padding shown below.
+Insert **Registered Renderer** and choose **PHP greeting from Code Snippets**. The snippet registers `examples/php-card` on `rrb_register_renderers`; its callback returns escaped HTML. The heading and message become settings in the block sidebar. The examples use the snippet output with the theme’s normal styles: no background box or padding is added. Native block Styles controls remain optional. The thin editor selection outline is WordPress UI, not frontend markup.
 
 ![Active PHP registration snippet in Code Snippets](php-snippet-source.jpg)
 
